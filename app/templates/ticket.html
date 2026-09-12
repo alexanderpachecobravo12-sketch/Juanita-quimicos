@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Ticket {{ venta.numero_ticket }}{% endblock %}
+{% block hero %}{% endblock %}
+{% block contenido %}
+<div class="ticket">
+  <h2>LA JUANITA QUÍMICOS</h2>
+  <div style="text-align:center;">Ticket de venta</div>
+  <hr>
+  <div class="linea"><span>Nº Ticket:</span><span>{{ venta.numero_ticket }}</span></div>
+  <div class="linea"><span>Fecha:</span><span>{{ venta.fecha.strftime('%d/%m/%Y %H:%M') }}</span></div>
+  <div class="linea"><span>Terminal:</span><span>{{ venta.terminal }}</span></div>
+  <div class="linea"><span>Cajero:</span><span>{{ venta.cajero.nombre }}</span></div>
+  <hr>
+  <div class="linea"><span>Producto:</span><span>{{ venta.producto.nombre }}</span></div>
+  <div class="linea"><span>Cantidad:</span><span>{{ "%.2f"|format(venta.cantidad) }} {{ venta.producto.unidad_medida }}</span></div>
+  <hr>
+  {% if venta.stock_insuficiente %}
+  <p style="color:#b71c1c; text-align:center;">** Venta con stock insuficiente **</p>
+  {% endif %}
+  <p style="text-align:center;">¡Gracias por su compra!</p>
+</div>
+
+<div style="text-align:center; margin-top:1.5rem;" class="no-imprimir">
+  <button onclick="window.print()">{{ icon('printer', 16) }} Imprimir</button>
+  <a href="{{ url_for('venta.nueva_venta') }}" class="btn btn-secundario">{{ icon('cart', 16) }} Nueva venta</a>
+</div>
+{% endblock %}

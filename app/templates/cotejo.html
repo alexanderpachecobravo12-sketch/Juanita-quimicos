@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Cotejo semanal{% endblock %}
+{% block titulo_pagina %}Cotejo semanal de inventario{% endblock %}
+{% block subtitulo_pagina %}Registra el conteo físico real; la diferencia contra el sistema se calcula sola.{% endblock %}
+{% block contenido %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo verde">{{ icon('check-square', 20) }}</div>
+      <div>
+        <h2>Nuevo cotejo</h2>
+      </div>
+    </div>
+    <span class="badge-requisito">Campos obligatorios *</span>
+  </div>
+  <form method="post" id="form-cotejo">
+    <div class="form-row">
+      <div>
+        <label for="producto_id">Producto <span class="req">*</span></label>
+        <select id="producto_id" name="producto_id" required onchange="mostrarSaldo()">
+          <option value="">-- Selecciona --</option>
+          {% for p in productos %}
+            <option value="{{ p.id }}" data-saldo="{{ p.stock_actual }}" data-unidad="{{ p.unidad_medida }}">
+              {{ p.codigo }} — {{ p.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+        <div class="hint" id="saldo-info">Selecciona un producto para ver el saldo según el sistema.</div>
+      </div>
+      <div>
+        <label for="conteo_fisico">Conteo físico real <span class="req">*</span></label>
+        <input type="number" id="conteo_fisico" name="conteo_fisico" step="0.01" min="0" required placeholder="Ej. 12">
+      </div>
+    </div>
+    <label for="observacion">Observación</label>
+    <textarea id="observacion" name="observacion" rows="2" placeholder="Opcional"></textarea>
+    <button type="submit">{{ icon('save', 16) }} Registrar cotejo</button>
+    <button type="reset" class="btn-secundario">{{ icon('refresh-cw', 16) }} Limpiar</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo azul">{{ icon('clock', 20) }}</div>
+      <div>
+        <h2>Historial de cotejos</h2>
+        <p class="subtitulo">Últimos 30 registros.</p>
+      </div>
+    </div>
+  </div>
+  {% if historial %}
+  <div class="tabla-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Producto</th><th>Sistema</th><th>Físico</th><th>Diferencia</th><th>Responsable</th></tr>
+    </thead>
+    <tbody>
+      {% for c in historial %}
+      <tr class="{{ 'bajo-minimo' if c.diferencia != 0 else '' }}">
+        <td>{{ c.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>{{ c.producto.nombre }}</td>
+        <td>{{ "%.2f"|format(c.saldo_sistema) }}</td>
+        <td>{{ "%.2f"|format(c.conteo_fisico) }}</td>
+        <td>
+          {% if c.diferencia == 0 %}
+            <span class="badge badge-verde">{{ icon('check-circle', 12) }} 0</span>
+          {% else %}
+            <span class="badge badge-rojo">{{ icon('alert-triangle', 12) }} {{ "%+.2f"|format(c.diferencia) }}</span>
+          {% endif %}
+        </td>
+        <td>{{ c.responsable.nombre }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('inbox', 32) }}
+    <strong>Sin cotejos registrados</strong>
+    <span>El conteo físico semanal aparecerá aquí una vez registrado.</span>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function mostrarSaldo() {
+  const select = document.getElementById('producto_id');
+  const opt = select.options[select.selectedIndex];
+  const info = document.getElementById('saldo-info');
+  if (!opt.value) { info.textContent = 'Selecciona un producto para ver el saldo según el sistema.'; return; }
+  info.textContent = `Saldo según el sistema: ${parseFloat(opt.dataset.saldo).toFixed(2)} ${opt.dataset.unidad}`;
+}
+</script>
+{% endblock %}

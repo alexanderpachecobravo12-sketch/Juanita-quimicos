@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Kardex / Stock actual{% endblock %}
+{% block titulo_pagina %}Kardex — Stock actual{% endblock %}
+{% block subtitulo_pagina %}Saldo = entradas físicas (guías) − salidas (ventas).{% endblock %}
+{% block contenido %}
+{% set bajos = filas|selectattr('bajo_minimo')|list %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo azul">{{ icon('grid', 20) }}</div>
+      <div>
+        <h2>Detalle por producto</h2>
+      </div>
+    </div>
+    {% if bajos %}
+      <span class="badge-conteo ambar">{{ icon('alert-triangle', 14) }} {{ bajos|length }} bajo mínimo</span>
+    {% else %}
+      <span class="badge-conteo verde">{{ icon('check-circle', 14) }} Todo en orden</span>
+    {% endif %}
+  </div>
+  {% if filas %}
+  <div class="tabla-wrap">
+  <table>
+    <thead>
+      <tr><th>Código</th><th>Producto</th><th>Entradas</th><th>Salidas</th><th>Saldo actual</th><th>Stock mínimo</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+      {% for f in filas %}
+      <tr class="{{ 'bajo-minimo' if f.bajo_minimo else '' }}">
+        <td>{{ f.producto.codigo }}</td>
+        <td>{{ f.producto.nombre }}{% if not f.producto.activo %} <span class="badge badge-gris">inactivo</span>{% endif %}</td>
+        <td>{{ "%.2f"|format(f.entradas) }}</td>
+        <td>{{ "%.2f"|format(f.salidas) }}</td>
+        <td><strong>{{ "%.2f"|format(f.saldo) }}</strong> {{ f.producto.unidad_medida }}</td>
+        <td>{{ "%.2f"|format(f.producto.stock_minimo) }}</td>
+        <td>
+          {% if f.bajo_minimo %}
+            <span class="badge badge-amarillo">{{ icon('alert-triangle', 12) }} Bajo mínimo</span>
+          {% else %}
+            <span class="badge badge-verde">{{ icon('check-circle', 12) }} OK</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('package', 32) }}
+    <strong>Aún no hay productos en el catálogo</strong>
+    <span>El administrador debe registrarlos en Catálogo.</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

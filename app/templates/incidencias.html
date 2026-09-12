@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Incidencias de factura{% endblock %}
+{% block titulo_pagina %}Registrar incidencia de factura{% endblock %}
+{% block subtitulo_pagina %}Registra y da seguimiento a las diferencias entre la factura del proveedor y el stock recibido.{% endblock %}
+{% block contenido %}
+<div class="flash flash-info">{{ icon('inbox', 18) }} <span>La factura del proveedor NUNCA modifica el stock. Esto solo queda registrado como incidencia contable/informativa.</span></div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo verde">{{ icon('file-text', 20) }}</div>
+      <div>
+        <h2>Nueva incidencia</h2>
+        <p class="subtitulo">Completa la información para registrar una incidencia de factura.</p>
+      </div>
+    </div>
+    <span class="badge-requisito">Campos obligatorios *</span>
+  </div>
+  <form method="post" id="form-incidencia">
+    <div class="form-row">
+      <div>
+        <label for="recepcion_id">{{ icon('truck', 14) }} Recepción (guía) asociada <span class="req">*</span></label>
+        <select id="recepcion_id" name="recepcion_id" required>
+          <option value="">-- Selecciona una recepción --</option>
+          {% for r in recepciones %}
+            <option value="{{ r.id }}">
+              Guía {{ r.numero_guia }} — {{ r.producto.nombre }} — físico: {{ "%.2f"|format(r.cantidad_fisica) }} ({{ r.fecha.strftime('%d/%m/%Y') }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="numero_factura">{{ icon('file-text', 14) }} Nº de factura <span class="req">*</span></label>
+        <input type="text" id="numero_factura" name="numero_factura" required placeholder="Ej. F001-00001234">
+      </div>
+      <div>
+        <label for="cantidad_facturada">Cantidad facturada <span class="req">*</span></label>
+        <input type="number" id="cantidad_facturada" name="cantidad_facturada" step="0.01" min="0" required placeholder="Ej. 30">
+      </div>
+    </div>
+    <button type="submit">{{ icon('save', 16) }} Registrar incidencia</button>
+    <button type="reset" class="btn-secundario">{{ icon('refresh-cw', 16) }} Limpiar</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo ambar">{{ icon('clock', 20) }}</div>
+      <div>
+        <h2>Incidencias pendientes</h2>
+        <p class="subtitulo">Incidencias registradas que aún requieren resolución.</p>
+      </div>
+    </div>
+    <span class="badge-conteo {{ 'ambar' if pendientes else 'verde' }}">{{ pendientes|length }} pendiente{{ 's' if pendientes|length != 1 }}</span>
+  </div>
+  {% if pendientes %}
+  <div class="tabla-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Factura</th><th>Guía</th><th>Producto</th><th>Facturado</th><th>Físico</th><th>Diferencia</th><th>Días</th>{% if current_user.rol == 'administrador' %}<th>Resolver</th>{% endif %}</tr>
+    </thead>
+    <tbody>
+      {% for i in pendientes %}
+      <tr class="bajo-minimo">
+        <td>{{ i.fecha.strftime('%d/%m/%Y') }}</td>
+        <td>{{ i.numero_factura }}</td>
+        <td>{{ i.recepcion.numero_guia }}</td>
+        <td>{{ i.recepcion.producto.nombre }}</td>
+        <td>{{ "%.2f"|format(i.cantidad_facturada) }}</td>
+        <td>{{ "%.2f"|format(i.recepcion.cantidad_fisica) }}</td>
+        <td><span class="badge badge-rojo">{{ "%+.2f"|format(i.diferencia) }}</span></td>
+        <td>{{ i.dias_abierta }}</td>
+        {% if current_user.rol == 'administrador' %}
+        <td>
+          <form method="post" action="{{ url_for('incidencias.resolver_incidencia', incidencia_id=i.id) }}" style="display:flex; gap:0.3rem; margin:0;">
+            <input type="text" name="resolucion" placeholder="Ej: nota de crédito Nº..." style="margin:0;">
+            <button type="submit" class="btn-sm">{{ icon('check-circle', 14) }} Resolver</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('inbox', 32) }}
+    <strong>Sin incidencias pendientes</strong>
+    <span>No hay incidencias registradas en estado pendiente.</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo verde">{{ icon('check-circle', 20) }}</div>
+      <div>
+        <h2>Incidencias resueltas</h2>
+        <p class="subtitulo">Historial de incidencias que ya fueron atendidas (últimas 30).</p>
+      </div>
+    </div>
+    <span class="badge-conteo {{ 'verde' if resueltas else '' }}">{{ resueltas|length }} resuelta{{ 's' if resueltas|length != 1 }}</span>
+  </div>
+  {% if resueltas %}
+  <div class="tabla-wrap">
+  <table>
+    <thead><tr><th>Fecha</th><th>Factura</th><th>Producto</th><th>Diferencia</th><th>Resolución</th><th>Resuelto por</th><th>Fecha resolución</th></tr></thead>
+    <tbody>
+      {% for i in resueltas %}
+      <tr>
+        <td>{{ i.fecha.strftime('%d/%m/%Y') }}</td>
+        <td>{{ i.numero_factura }}</td>
+        <td>{{ i.recepcion.producto.nombre }}</td>
+        <td>{{ "%+.2f"|format(i.diferencia) }}</td>
+        <td>{{ i.resolucion or '—' }}</td>
+        <td>{{ i.resuelto_por.nombre if i.resuelto_por else '—' }}</td>
+        <td>{{ i.resuelto_en.strftime('%d/%m/%Y %H:%M') if i.resuelto_en else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('inbox', 32) }}
+    <strong>Sin incidencias resueltas todavía</strong>
+    <span>Cuando resuelvas una incidencia pendiente, aparecerá aquí.</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

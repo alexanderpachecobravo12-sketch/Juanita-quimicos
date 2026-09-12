@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Confirmar venta con stock insuficiente{% endblock %}
+{% block titulo_pagina %}Confirmar venta{% endblock %}
+{% block subtitulo_pagina %}Revisa antes de continuar.{% endblock %}
+{% block contenido %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo ambar">{{ icon('alert-triangle', 20) }}</div>
+      <div>
+        <h2>Stock insuficiente</h2>
+      </div>
+    </div>
+  </div>
+  <p>
+    El producto <strong>{{ producto.nombre }}</strong> tiene un stock disponible de
+    <strong>{{ "%.2f"|format(stock_disponible) }} {{ producto.unidad_medida }}</strong>,
+    pero se está intentando vender <strong>{{ "%.2f"|format(cantidad) }} {{ producto.unidad_medida }}</strong>.
+  </p>
+  <p class="hint" style="margin-top:0;">Puedes continuar de todas formas — la venta quedará marcada como "stock insuficiente" para revisión del administrador.</p>
+
+  <form method="post" action="{{ url_for('venta.registrar_venta') }}">
+    <input type="hidden" name="producto_id" value="{{ producto.id }}">
+    <input type="hidden" name="cantidad" value="{{ cantidad }}">
+    <input type="hidden" name="terminal" value="{{ terminal }}">
+    <input type="hidden" name="confirmar_stock_insuficiente" value="1">
+    <button type="submit" class="btn-peligro">{{ icon('alert-triangle', 16) }} Continuar de todas formas</button>
+    <a href="{{ url_for('venta.nueva_venta') }}" class="btn btn-secundario">{{ icon('x-circle', 16) }} Cancelar</a>
+  </form>
+</div>
+{% endblock %}

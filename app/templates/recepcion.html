@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Recepción de guía{% endblock %}
+{% block titulo_pagina %}Registrar recepción de guía{% endblock %}
+{% block subtitulo_pagina %}El stock se mueve con la cantidad física contada, nunca con la de la guía.{% endblock %}
+{% block contenido %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo verde">{{ icon('truck', 20) }}</div>
+      <div>
+        <h2>Nueva recepción</h2>
+      </div>
+    </div>
+    <span class="badge-requisito">Campos obligatorios *</span>
+  </div>
+  <form method="post" id="form-recepcion">
+    <div class="form-row">
+      <div>
+        <label for="numero_guia">Nº de guía <span class="req">*</span></label>
+        <input type="text" id="numero_guia" name="numero_guia" required placeholder="Ej. G-0001">
+      </div>
+      <div>
+        <label for="proveedor">Proveedor <span class="req">*</span></label>
+        <input type="text" id="proveedor" name="proveedor" required placeholder="Ej. Agroquímicos SAC">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label for="producto_id">Producto <span class="req">*</span></label>
+        <select id="producto_id" name="producto_id" required>
+          <option value="">-- Selecciona --</option>
+          {% for p in productos %}
+            <option value="{{ p.id }}">{{ p.codigo }} — {{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label for="cantidad_guia">Cantidad indicada en la guía <span class="req">*</span></label>
+        <input type="number" id="cantidad_guia" name="cantidad_guia" step="0.01" min="0" required placeholder="Ej. 30">
+      </div>
+      <div>
+        <label for="cantidad_fisica">{{ icon('check-square', 14) }} Cantidad física contada <span class="req">*</span></label>
+        <input type="number" id="cantidad_fisica" name="cantidad_fisica" step="0.01" min="0" required placeholder="Ej. 15">
+      </div>
+    </div>
+
+    <label for="observaciones">Observaciones <span class="req" id="obs-req" style="display:none;">*</span></label>
+    <textarea id="observaciones" name="observaciones" rows="2" placeholder="Opcional, salvo que la cantidad física difiera de la guía"></textarea>
+    <div class="hint" id="obs-hint"></div>
+
+    <button type="submit">{{ icon('save', 16) }} Registrar recepción</button>
+    <button type="reset" class="btn-secundario">{{ icon('refresh-cw', 16) }} Limpiar</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo azul">{{ icon('file-text', 20) }}</div>
+      <div>
+        <h2>Últimas recepciones</h2>
+        <p class="subtitulo">Filas resaltadas: la cantidad física difiere de la guía.</p>
+      </div>
+    </div>
+  </div>
+  {% if ultimas %}
+  <div class="tabla-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Guía</th><th>Proveedor</th><th>Producto</th><th>Guía</th><th>Físico</th><th>Registrado por</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ultimas %}
+      <tr class="{{ 'bajo-minimo' if r.diferencia_guia_fisica != 0 else '' }}">
+        <td>{{ r.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>{{ r.numero_guia }}</td>
+        <td>{{ r.proveedor }}</td>
+        <td>{{ r.producto.nombre }}</td>
+        <td>{{ "%.2f"|format(r.cantidad_guia) }}</td>
+        <td>{{ "%.2f"|format(r.cantidad_fisica) }}</td>
+        <td>{{ r.usuario.nombre }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('inbox', 32) }}
+    <strong>Sin recepciones registradas</strong>
+    <span>Las guías que registres aparecerán aquí.</span>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function actualizarObservacionRequerida() {
+  const guiaInput = document.getElementById('cantidad_guia');
+  const fisicaInput = document.getElementById('cantidad_fisica');
+  const obs = document.getElementById('observaciones');
+  const reqMark = document.getElementById('obs-req');
+  const hint = document.getElementById('obs-hint');
+
+  const guia = parseFloat(guiaInput.value);
+  const fisica = parseFloat(fisicaInput.value);
+  const difiere = !isNaN(guia) && !isNaN(fisica) && guia !== fisica;
+
+  obs.required = difiere;
+  reqMark.style.display = difiere ? 'inline' : 'none';
+  hint.textContent = difiere
+    ? 'La cantidad física difiere de la guía: indica si fue exceso o faltante antes de registrar.'
+    : '';
+}
+
+document.getElementById('cantidad_guia').addEventListener('input', actualizarObservacionRequerida);
+document.getElementById('cantidad_fisica').addEventListener('input', actualizarObservacionRequerida);
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Reportes{% endblock %}
+{% block titulo_pagina %}Reportes{% endblock %}
+{% block subtitulo_pagina %}Historial de movimientos e incidencias, listos para exportar.{% endblock %}
+{% block contenido %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo azul">{{ icon('bar-chart', 20) }}</div>
+      <div>
+        <h2>Historial de movimientos por producto</h2>
+        <p class="subtitulo">Entradas (recepciones) y salidas (ventas) de un producto, en orden cronológico.</p>
+      </div>
+    </div>
+  </div>
+  <form method="get" class="form-row" style="align-items:flex-end;">
+    <div>
+      <label for="producto_id">Producto</label>
+      <select id="producto_id" name="producto_id" onchange="this.form.submit()">
+        <option value="">-- Selecciona un producto --</option>
+        {% for p in productos %}
+          <option value="{{ p.id }}" {{ 'selected' if producto_seleccionado and producto_seleccionado.id == p.id }}>
+            {{ p.codigo }} — {{ p.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if producto_seleccionado %}
+    <p>
+      <a class="btn btn-sm" href="{{ url_for('reportes.exportar_movimientos', producto_id=producto_seleccionado.id, formato='xlsx') }}">{{ icon('file-text', 14) }} Exportar Excel</a>
+      <a class="btn btn-sm btn-secundario" href="{{ url_for('reportes.exportar_movimientos', producto_id=producto_seleccionado.id, formato='csv') }}">{{ icon('file-text', 14) }} Exportar CSV</a>
+    </p>
+    {% if movimientos %}
+    <div class="tabla-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Cantidad</th><th>Usuario</th><th>Detalle</th></tr></thead>
+      <tbody>
+        {% for m in movimientos %}
+        <tr>
+          <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ m.tipo }}</td>
+          <td>{{ m.referencia }}</td>
+          <td>{{ "%+.2f"|format(m.cantidad) }}</td>
+          <td>{{ m.usuario }}</td>
+          <td>{{ m.detalle }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="estado-vacio">
+      {{ icon('inbox', 32) }}
+      <strong>Sin movimientos registrados para este producto</strong>
+    </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo ambar">{{ icon('alert-triangle', 20) }}</div>
+      <div>
+        <h2>Incidencias de factura pendientes</h2>
+        <p class="subtitulo">Diferencias entre lo facturado y lo recibido, aún sin resolver.</p>
+      </div>
+    </div>
+    <span class="badge-conteo {{ 'ambar' if incidencias_pendientes else 'verde' }}">{{ incidencias_pendientes|length }} pendiente{{ 's' if incidencias_pendientes|length != 1 }}</span>
+  </div>
+  <p><a class="btn btn-sm btn-secundario" href="{{ url_for('reportes.exportar_incidencias') }}">{{ icon('file-text', 14) }} Exportar todas a Excel</a></p>
+  {% if incidencias_pendientes %}
+  <div class="tabla-wrap">
+  <table>
+    <thead><tr><th>Fecha</th><th>Factura</th><th>Guía</th><th>Producto</th><th>Diferencia</th></tr></thead>
+    <tbody>
+      {% for i in incidencias_pendientes %}
+      <tr>
+        <td>{{ i.fecha.strftime('%d/%m/%Y') }}</td>
+        <td>{{ i.numero_factura }}</td>
+        <td>{{ i.recepcion.numero_guia }}</td>
+        <td>{{ i.recepcion.producto.nombre }}</td>
+        <td><span class="badge badge-rojo">{{ "%+.2f"|format(i.diferencia) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="estado-vacio">
+    {{ icon('check-circle', 32) }}
+    <strong>Sin incidencias pendientes</strong>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

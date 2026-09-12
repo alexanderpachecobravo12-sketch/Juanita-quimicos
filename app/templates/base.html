@@ -1,0 +1,77 @@
+{% from "_icons.html" import icon %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}La Juanita Químicos{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if current_user.is_authenticated %}
+  <header class="topbar no-imprimir">
+    <div class="topbar-logo-wrap">
+      <img class="topbar-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="La Juanita Químicos">
+    </div>
+    <nav class="menu">
+      {% if current_user.rol in ['cajero', 'administrador'] %}
+        <a href="{{ url_for('venta.nueva_venta') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('venta.') }}">{{ icon('cart', 16) }} Venta</a>
+      {% endif %}
+      {% if current_user.rol in ['almacenero', 'administrador'] %}
+        <a href="{{ url_for('recepcion.nueva_recepcion') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('recepcion.') }}">{{ icon('truck', 16) }} Recepción</a>
+      {% endif %}
+      <a href="{{ url_for('kardex.ver_kardex') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('kardex.') }}">{{ icon('grid', 16) }} Kardex / Stock</a>
+      {% if current_user.rol in ['almacenero', 'administrador'] %}
+        <a href="{{ url_for('cotejo.nuevo_cotejo') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cotejo.') }}">{{ icon('check-square', 16) }} Cotejo semanal</a>
+        <a href="{{ url_for('incidencias.listar_incidencias') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('incidencias.') }}">{{ icon('alert-triangle', 16) }} Incidencias</a>
+      {% endif %}
+      {% if current_user.rol == 'administrador' %}
+        <a href="{{ url_for('catalogo.listar_productos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('catalogo.') }}">{{ icon('tag', 16) }} Catálogo</a>
+        <a href="{{ url_for('usuarios.listar_usuarios') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('usuarios.') }}">{{ icon('users', 16) }} Usuarios</a>
+        <a href="{{ url_for('reportes.ver_reportes') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('reportes.') }}">{{ icon('file-text', 16) }} Reportes</a>
+      {% endif %}
+    </nav>
+    <div class="usuario-info">
+      <div class="avatar">{{ current_user.nombre[:1]|upper }}</div>
+      <div class="quien">
+        <span class="nombre">{{ current_user.nombre }}</span>
+        <span class="rol">{{ current_user.rol }}</span>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="salir">{{ icon('log-out', 16) }} Salir</a>
+    </div>
+  </header>
+
+  {% block hero %}
+  <section class="hero no-imprimir">
+    <div class="hero-bg"></div>
+    <div class="hero-contenido">
+      <div class="hero-titulo">
+        <div class="icon-circulo verde cuadro">{{ icon('leaf', 20) }}</div>
+        <div>
+          <h1>{% block titulo_pagina %}{% endblock %}</h1>
+          <p class="subtitulo">{% block subtitulo_pagina %}{% endblock %}</p>
+        </div>
+      </div>
+      <div class="hero-tagline">
+        {{ icon('leaf', 20) }}
+        <span>INSUMOS HOY,<br>CULTIVOS MÁS FUERTES MAÑANA</span>
+      </div>
+    </div>
+  </section>
+  {% endblock %}
+  {% endif %}
+
+  <main>
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% if mensajes %}
+        {% for categoria, mensaje in mensajes %}
+          {% set icono = {'success': 'check-circle', 'danger': 'x-circle', 'warning': 'alert-triangle', 'info': 'inbox'}.get(categoria, 'inbox') %}
+          <div class="flash flash-{{ categoria }}">{{ icon(icono, 18) }} <span>{{ mensaje }}</span></div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

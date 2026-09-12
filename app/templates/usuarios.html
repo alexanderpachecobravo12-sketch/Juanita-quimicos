@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block titulo %}Usuarios{% endblock %}
+{% block titulo_pagina %}Usuarios{% endblock %}
+{% block subtitulo_pagina %}Cada persona necesita su propio usuario para que quede trazabilidad.{% endblock %}
+{% block contenido %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo verde">{{ icon('users', 20) }}</div>
+      <div>
+        <h2>Nuevo usuario</h2>
+      </div>
+    </div>
+    <span class="badge-requisito">Campos obligatorios *</span>
+  </div>
+  <form method="post" action="{{ url_for('usuarios.crear_usuario') }}">
+    <div class="form-row">
+      <div>
+        <label for="username">Usuario (login) <span class="req">*</span></label>
+        <input type="text" id="username" name="username" required placeholder="Ej. almacen1">
+      </div>
+      <div>
+        <label for="nombre">Nombre completo <span class="req">*</span></label>
+        <input type="text" id="nombre" name="nombre" required placeholder="Ej. Juan Pérez">
+      </div>
+      <div>
+        <label for="rol">Rol <span class="req">*</span></label>
+        <select id="rol" name="rol" required>
+          {% for r in roles %}
+            <option value="{{ r }}">{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="password">Contraseña inicial <span class="req">*</span></label>
+        <input type="password" id="password" name="password" required placeholder="Mínimo 4 caracteres">
+      </div>
+    </div>
+    <button type="submit">{{ icon('plus', 16) }} Crear usuario</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-titulo">
+      <div class="icon-circulo azul">{{ icon('user', 20) }}</div>
+      <div>
+        <h2>Usuarios registrados</h2>
+        <p class="subtitulo">Cambia claves o desactiva cuentas que ya no deban ingresar.</p>
+      </div>
+    </div>
+    <span class="badge-conteo">{{ usuarios|length }} usuario{{ 's' if usuarios|length != 1 }}</span>
+  </div>
+  <div class="tabla-wrap">
+  <table>
+    <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.nombre }}</td>
+        <td>{{ u.rol }}</td>
+        <td>{% if u.activo %}<span class="badge badge-verde">{{ icon('check-circle', 12) }} Activo</span>{% else %}<span class="badge badge-gris">Inactivo</span>{% endif %}</td>
+        <td style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <form method="post" action="{{ url_for('usuarios.cambiar_clave', usuario_id=u.id) }}" style="display:flex; gap:0.3rem; margin:0;">
+            <input type="password" name="password" placeholder="Nueva clave" style="margin:0;" minlength="4">
+            <button type="submit" class="btn-sm">{{ icon('save', 14) }} Cambiar clave</button>
+          </form>
+          <form method="post" action="{{ url_for('usuarios.toggle_usuario', usuario_id=u.id) }}" style="margin:0;">
+            <button type="submit" class="btn-sm {{ 'btn-secundario' if u.activo else '' }}" {% if u.id == current_user.id %}disabled{% endif %}>
+              {{ icon('power', 14) }} {{ 'Desactivar' if u.activo else 'Activar' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}
